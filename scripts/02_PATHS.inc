@@ -12,8 +12,8 @@ AF_DIR=~/af2complex/src
 STORAGE=${MAIN}/output_files
 
 ### MAYBE NEEDS TO BE ADJUSTED IN THE FUTURE IF MPCDF CHANGES STUFF #####################################################
-AF2_DIR=/mpcdf/soft/SLE_15/packages/x86_64/alphafold/2.3.0
-DATA_DIR=/raven/ri/public_sequence_data/alphafold2/git-v2.3.0/data/
+AF2_DIR=/mpcdf/soft/SLE_15/packages/x86_64/alphafold/2.3.1
+DATA_DIR=/raven/ri/public_sequence_data/alphafold2/git-v2.3.1/data/
 # Preset for alphafold, passed via --db_preset
 #PRESET="full_dbs"
 PRESET="reduced_dbs"
