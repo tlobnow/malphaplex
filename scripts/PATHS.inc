@@ -15,7 +15,7 @@ LOC_LISTS=${MAIN}/scripts/lists           # Specify where list files    are loca
 ##########################################################################################################################
 ##########################################################################################################################
 
-PYTHON_PATH=~/miniconda3/envs/fishy/bin
+PYTHON_PATH=~/miniconda3/envs/malpha/bin
 AF_DIR=~/af2complex/src
 AF2_DIR=/mpcdf/soft/SLE_15/packages/x86_64/alphafold/2.3.0
 DATA_DIR=/raven/ri/public_sequence_data/alphafold2/git-v2.3.0/data/

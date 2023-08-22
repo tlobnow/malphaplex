@@ -5,7 +5,7 @@
 # CHECK IF THESE LOCATIONS ARE CORRECT ON YOUR ACCOUNT!
 MAIN=/u/$USER/malphaplex
 PTMP=/ptmp/$USER
-PYTHON_PATH=~/miniconda3/envs/fishy/bin
+PYTHON_PATH=~/miniconda3/envs/malpha/bin
 AF_DIR=~/af2complex/src
 
 # DEFAULT LOCATION FOR FINISHED OUTPUT FOLDERS

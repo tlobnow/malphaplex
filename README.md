@@ -12,14 +12,14 @@
 
 3. Create a new environment:
 
-        conda create --name fishy python=3.8
+        conda create --name malpha python=3.8
 
 
 4. Activate the environment:
 
-        conda activate fishy
+        conda activate malpha
 
-    To automatically activate the environment at login, add `conda activate fishy` to your ~/.bashrc file. (Type `nano ~/.bashrc` and paste the line at the end of the file, save and exit using `ctrl+x` and `y`)
+    To automatically activate the environment at login, add `conda activate malpha` to your ~/.bashrc file. (Type `nano ~/.bashrc` and paste the line at the end of the file, save and exit using `ctrl+x` and `y`)
 
 5. Clone required Github repositories and run the `setup.sh` script:
 
@@ -34,7 +34,7 @@
 
 1. Activate the environment and update scripts:
 
-        conda activate fishy
+        conda activate malpha
         cd malphaplex
         git pull
 
