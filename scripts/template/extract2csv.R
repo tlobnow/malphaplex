@@ -1,8 +1,14 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
 
-LOC_OUT       = args[1]
-OUT_NAME      = args[2]
+# Navigate one directory up from RUN_DETAILS
+parent_dir <- dirname(getwd())
+# Extract main path and folder name
+OUT_NAME <- basename(parent_dir)
+
+#cat("parent_dir: ", parent_dir, "\n")
+#cat("OUT_NAME: ", OUT_NAME, "\n")
+
 OVERWRITE_CSV = FALSE
 unlink(".RData")
 
@@ -48,7 +54,7 @@ files <- OUT_NAME
 # Iterate over each file
 for (fileName in files) {
 	# Get the complete path of the output folder
-	folder <- LOC_OUT
+	folder <- parent_dir
 
 	dir_create(folder,"CSV")
 
@@ -71,9 +77,10 @@ for (fileName in files) {
 	# Get the JSON folder and the latest JSON file
 	# Check in the JSON folder
 	jsonFolder <- file.path(folder, "JSON")
-	jsonFilesInJSONFolder <- dir_ls(path = jsonFolder, pattern = "\\.json$", full.names = TRUE, recursive = TRUE)
-	jsonFilesInOrigFolder <- dir_ls(path = folder, pattern = "\\.json$", full.names = TRUE, recursive = FALSE)
-	jsonFiles <- c(jsonFilesInJSONFolder, jsonFilesInOrigFolder)
+	#jsonFilesInJSONFolder <- list.files(path = jsonFolder, pattern = "\\.json$", full.names = TRUE, recursive = TRUE)
+	#jsonFilesInOrigFolder <- list.files(path = folder, pattern = "\\.json$", full.names = TRUE, recursive = FALSE)
+	#jsonFiles <- c(jsonFilesInJSONFolder, jsonFilesInOrigFolder)
+	jsonFiles <- dir_ls(jsonFolder, regexp = "\\.json$", recurse = TRUE)
 
 	# Skip the iteration if no JSON files found
 	if (is_empty(jsonFiles)) {

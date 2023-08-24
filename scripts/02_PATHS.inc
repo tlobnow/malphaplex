@@ -44,4 +44,4 @@ touch ${STORAGE}/finished_files_will_move_here
 # EXTRA PATHS FOR MSA ####################################################################################################
 FASTA_PATHS=${MAIN}/fasta_files/$FILE.fasta
 OUTPUT_DIR=${LOC_FEATURES}
-TOOL_DIR=/mpcdf/soft/SLE_15/packages/x86_64/alphafold/2.3.0/bin
+TOOL_DIR=/mpcdf/soft/SLE_15/packages/x86_64/alphafold/2.3.1/bin

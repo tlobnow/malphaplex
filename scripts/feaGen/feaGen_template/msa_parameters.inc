@@ -1,6 +1,6 @@
 #source ../../PATHS.inc
 source ~/malphaplex/scripts/02_PATHS.inc
-source ~/malphaplex/scripts/01_source.inc
+source ~/malphaplex/scripts/01_SOURCE.inc
 source 00_user_parameters.inc
 
 FILE=$FILE
@@ -16,12 +16,8 @@ OUTPUT_DIR=/ptmp/$USER/feature_files/
 #PRESET="full_dbs"
 PRESET="reduced_dbs"
 
-## MAX TEMPLATE DATE ######################################################
-MAX_TEMPLATE_DATE=2020-05-15
-
 PYTHON_PATH=~/miniconda3/envs/malpha/bin
 AF_DIR=~/af2complex/src
-AF2_DIR=/mpcdf/soft/SLE_15/packages/x86_64/alphafold/2.3.0/
-DATA_DIR=/raven/ri/public_sequence_data/alphafold2/git-v2.3.0/data/
-
-TOOL_DIR=/mpcdf/soft/SLE_15/packages/x86_64/alphafold/2.3.0/bin
+AF2_DIR=/mpcdf/soft/SLE_15/packages/x86_64/alphafold/2.3.1/
+DATA_DIR=/raven/ri/public_sequence_data/alphafold2/git-v2.3.1/data/
+TOOL_DIR=/mpcdf/soft/SLE_15/packages/x86_64/alphafold/2.3.1/bin

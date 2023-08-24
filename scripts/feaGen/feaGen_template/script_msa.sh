@@ -22,7 +22,7 @@
 set -e
 
 module purge
-module load alphafold/2.3.0
+module load alphafold/2.3.1
 module load cuda/11.4
 
 # include parameters common to the CPU and the GPU steps
@@ -68,7 +68,7 @@ uniref90_database_path=${DOWNLOAD_DIR}/uniref90/uniref90.fasta
 # Path to the MGnify database for use by JackHMMER.
 #mgnify_database_path = os.path.join( FLAGS.data_dir, 'mgnify', 'mgy_clusters_2018_12.fa')
 #mgnify_database_path=${DOWNLOAD_DIR}/mgnify/mgy_clusters_2018_12.fa
-mgnify_database_path=/raven/ri/public_sequence_data/alphafold2/git-v2.3.0/data/mgnify/mgy_clusters_2022_05.fa
+mgnify_database_path=/raven/ri/public_sequence_data/alphafold2/git-v2.3.1/data/mgnify/mgy_clusters_2022_05.fa
 
 # Path to the Uniprot database for use by JackHMMER.
 #uniprot_database_path = os.path.join(FLAGS.data_dir, 'uniprot', 'uniprot.fasta')
@@ -116,7 +116,7 @@ srun ${ALPHAFOLD_HOME}/bin/python3 -u $AF_DIR/run_af2c_fea.py \
         --pdb70_database_path=${pdb70_database_path} \
         --template_mmcif_dir=${template_mmcif_dir} \
         --obsolete_pdbs_path=${obsolete_pdbs_path} \
-        --max_template_date="2021-11-01"
+        --max_template_date="2023-01-01"
 #       ^^^ last line: limit to msa and templates on the CPU, then STOP
 
 

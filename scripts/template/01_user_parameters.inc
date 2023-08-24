@@ -1,7 +1,7 @@
 ## Set user parameters for alphafold, common to MSA and prediction jobs
 
 source ../../02_PATHS.inc
-source ../../01_source.inc
+source ../../01_SOURCE.inc
 source ./00_user_parameters.inc
 
 #if [ "$RUN" = "MATRIX" ]; then source ./target.lst; fi
