@@ -17,9 +17,19 @@ log_message() {
 }
 
 check_grep_status() {
-    local regex=$1
-    grep --include=slurm\* -rzl . -e "${regex}" > /dev/null
-    echo $?
+        local pattern=$1
+        local loc_slurms=$2
+        grep -q "$pattern" "${loc_slurms}"/*.log 2>/dev/null
+        return $?
+}
+
+# Usage: check_file_exists /path/to/file
+check_file_exists() {
+        local filepath=$1
+        if [ ! -f "${filepath}" ]; then
+                return 1
+        fi
+        return 0
 }
 
 wait_for_jobs_completion() {
@@ -32,86 +42,6 @@ wait_for_jobs_completion() {
     done
 }
 
-add_date() {
-    # Argument: Full path to the directory to be renamed
-    local ITEM_PATH="$1"
-
-    # Check if the path was provided
-    if [ -z "$ITEM_PATH" ]; then
-        echo "${RED}/(x.x)\\ ${GRAY}No directory path provided."
-        return 1
-    fi
-
-    # Get the directory's base name and its parent directory
-    local ITEM_NAME=$(basename "$ITEM_PATH")
-    local PARENT_DIR=$(dirname "$ITEM_PATH")
-
-    # Check if the directory exists
-    if [ ! -e "$ITEM_PATH" ]; then
-        echo "${RED}/(x.x)\\ ${GRAY}The specified directory does not exist."
-        return 1
-    fi
-
-    # Check if the directory name already has a date suffix using regex
-    if [[ $ITEM_NAME =~ [0-9]{8}_[0-9]{6}$ ]]; then
-        echo "The directory already has a date suffix. Skipping."
-        return 0
-    fi
-
-    # Generate the current date and time suffix
-    local suffix=$(date "+%Y%m%d_%H%M%S")
-    local NEW_NAME="${ITEM_NAME}_$suffix"
-    local NEW_PATH="${PARENT_DIR}/${NEW_NAME}"
-
-    # Rename the specified directory by appending the suffix
-    mv "$ITEM_PATH" "$NEW_PATH"
-
-    # Echo the new path so it can be captured by the caller
-    echo "$NEW_NAME"
-}
-
-add_rep() {
-    # Argument: Full path to the specific directory
-    local DIR_PATH="$1"
-    local BASENAME=$(basename "$DIR_PATH" | sed -E 's/(_[0-9]{8}_[0-9]{6})?(_rep[0-9]+)?$//')
-    local PARENT_DIR=$(dirname "$DIR_PATH")
-
-    # Collect matching directories
-    local matching_dirs=()
-    for dir in "$PARENT_DIR"/*; do
-        if [[ "$(basename "$dir" | sed -E 's/(_[0-9]{8}_[0-9]{6})?(_rep[0-9]+)?$//')" == "$BASENAME" ]]; then
-            matching_dirs+=("$dir")
-        fi
-    done
-
-    # Sort directories by date in their name or creation date
-    IFS=$'\n' sorted_dirs=($(printf "%s\n" "${matching_dirs[@]}" | sort -t "_" -k3,3))
-    if [[ ${#sorted_dirs[@]} -eq 0 ]]; then
-        sorted_dirs=($(ls -dt "${matching_dirs[@]}"))
-    fi
-    unset IFS
-
-    # Rename directories
-    local count=1
-    local NEW_NAME=""
-    for dir in "${sorted_dirs[@]}"; do
-        local DATE_SUFFIX=$(echo "$(basename "$dir")" | grep -oE '_[0-9]{8}_[0-9]{6}' || echo "")
-        NEW_NAME="$BASENAME$DATE_SUFFIX"_rep$count
-        mv "$dir" "$PARENT_DIR/$NEW_NAME"
-        echo "Renamed $dir to $PARENT_DIR/$NEW_NAME"
-        count=$((count + 1))
-    done
-
-    # Echo the new name of the specific directory
-    echo "$NEW_NAME"
-}
-
-# This function calculates the overall amino acid length of the input fasta files
-# based on the specified stoichiometries.
-# Arguments:
-#   $1: The directory containing the fasta files
-#   $2: The directory containing the corresponding feature files
-#   $3: The stoichiometry specification
 calculate_setup_aa_length() {
     local fasta_dir="${1:-$LOC_FASTA}"
     local feature_dir="${2:-$LOC_FEATURES}"
@@ -221,191 +151,233 @@ assess_model_files() {
     [ -d ./MODELS ] && MOVED_OUT_MODEL_COUNT=$(ls ./MODELS 2>/dev/null | grep -c ^${OUT_NAME}_model_*)
 }
 
-run_single_mode() {
-    source "${LOC_SCRIPTS}"/SINGLE.sh
-}
-
-run_multi_mode() {
-    local ind_list="${LOC_LISTS}/${FOLDER}_inds"
-    # Create a list of all fasta files (without the extension)
-    for i in "${LOC_FASTA}"/"${FOLDER}"/*.fasta; do
-        echo "$(basename -a -s .fasta $i)"
-    done > "$ind_list"
-
-    # Create missing run directories and copy templates
-    while read -r line; do
-        local run_dir="${LOC_SCRIPTS}/runs/${line}"
-        if [ ! -d "$run_dir" ]; then
-            log_message "creating folder $line"
-            cp -r "${LOC_SCRIPTS}/template" "$run_dir"
-            # Remove template folder if it was copied into the new folder by mistake
-            [ -d "${run_dir}/template" ] && rm -rf "${run_dir}/template"
-        else
-            log_message "checking file $line!"
-        fi
-    done < "$ind_list"
-
-    # Copy fasta files from the designated folder into the main fasta folder
-    cp "${LOC_FASTA}/${FOLDER}"/*.fasta "${LOC_FASTA}"
-    log_message "running MULTI.sh based on $ind_list"
-    # Run MULTI.sh on each fasta file in parallel
-    #parallel "sh ${LOC_SCRIPTS}/MULTI.sh {}" :::: "$ind_list"
-    parallel "source ${LOC_SCRIPTS}/MULTI.sh {}" :::: "$ind_list"
-}
-
-run_matrix_mode() {
-    source "${LOC_SCRIPTS}"/MATRIX.sh
-}
-
 check_and_process_fasta() {
-    local stoichiometry_pairs=("$@")
-    for pair in "${stoichiometry_pairs[@]}"; do
-        IFS=':' read -r feature count <<< "$pair"
-        IFS=',' read -ra fasta_files <<< "$feature"
-        for fasta_file in "${fasta_files[@]}"; do
-            local fasta_path="${LOC_FASTA}/${fasta_file}.fasta"
-            if [ ! -f "${fasta_path}" ]; then
-                log_message "${RED}" "/(x.x)\\ ${GRAY}At least one fasta file missing. Not found: $fasta_path"
-                FASTA_EXISTS="FALSE"
-            fi
-            local feature_folder="${LOC_FEATURES}/${fasta_file}/"
-            local feature_file="${LOC_FEATURES}/${fasta_file}/features.pkl"
-            if [ ! -f "${feature_file}" ]; then
-                CONTINUE="FALSE"
-                if [ "$FASTA_EXISTS" = "TRUE" ]; then
-                    if [ "$MODE" -ne 2 ]; then
-                        log_message "${RED}" "/(x.x)\\ ${GRAY}Feature file not found: $feature_file"
-                        cp -r "$LOC_FEA_GEN/feaGen_template" "$LOC_FEA_GEN/${fasta_file}"
-                        cd "$LOC_FEA_GEN/${fasta_file}"
-                        echo "FILE=${fasta_file}" > "$LOC_FEA_GEN/${fasta_file}/00_user_parameters.inc"
-                        local JOBID1=$(sbatch --parsable script_msa.sh)
-                        printf "${RED}/(x.x)\\ ${GRAY}FEATURES FILE MISSING... STARTING MSA FOR $fasta_file WITH JOB ID: ${RED}$JOBID1 ${NC}\n"
-			MSA_JOBIDS+=("$JOBID1")
-                    else
-                        log_message "${RED}" "/(x.x)\\ ${GRAY}NO SUBMISSION OF MSA JOBS... CHANGE MODE TO START MSA FOR $fasta_file ${NC}\n"
-                    fi
-                else
-                    log_message "${GRAY}" "Please supply $fasta_file in $LOC_FASTA"
-                fi
-            fi
+        local stoichiometry_pairs=("$@")
+        for pair in "${stoichiometry_pairs[@]}"; do
+                IFS=':' read -r feature count <<< "$pair"
+                IFS=',' read -ra fasta_files <<< "$feature"
+                for fasta_file in "${fasta_files[@]}"; do
+                        local fasta_path="${LOC_FASTA}/${fasta_file}.fasta"
+                        local feature_file="${LOC_FEATURES}/${fasta_file}/features.pkl"
+                        local flag_file="${LOC_FLAGS}/${fasta_file}.flag"
+
+                        # Check for existing feature files and remove the flag if found.
+                        if check_file_exists "${feature_file}"; then
+                                if [ -f "${flag_file}" ]; then
+                                        echo "Feature file exists for ${fasta_file}. Removing flag."
+                                        rm -f "${flag_file}"
+                                fi
+                                continue
+                        fi
+
+                        # Existing code for checking fasta and feature files
+                        if ! check_file_exists "${fasta_path}"; then
+                                echo "At least one fasta file missing. Not found: $fasta_path"
+                                FASTA_EXISTS="FALSE"
+                        fi
+
+                        if ! check_file_exists "${feature_file}"; then
+                                if [ "$FASTA_EXISTS" = "TRUE" ]; then
+                                        if [ "$MODE" -ne 2 ]; then
+                                                submit_feature_job "${fasta_file}"
+                                        else
+                                                echo "NO SUBMISSION OF MSA JOBS... CHANGE MODE TO START MSA FOR $fasta_file"
+                                        fi
+                                else
+                                        echo "Please supply $fasta_file in $LOC_FASTA"
+                                fi
+                        fi
+                done
         done
-    done
 }
 # Call the function
 #check_and_process_fasta "${stoichiometry_pairs[@]}"
 
-submit_jobs_based_on_mode() {
-    local mode=$1
-    local loc_fasta=$2
-    local loc_features=$3
-    local stoichiometry=$4
-
-    if [ "$mode" -eq 1 ]; then
-        local length=$(calculate_setup_aa_length "$loc_fasta" "$loc_features" "$stoichiometry")
-        if [ "$length" -lt 2000 ]; then
-            local JOBID1=$(sbatch --parsable script_model_all.sh)
-            log_message "${YELLOW}" "/(-.-)\\ ${GRAY}${JOBID1} (PRED1-5)"
-	    MODELING_JOBIDS+=("$JOBID1")
-        else
-            for i in {1..5}; do
-                local JOBID1=$(sbatch --parsable "script_model_${i}.sh")
-                log_message "${YELLOW}" "/(-.-)\\ ${GRAY}${JOBID1} (PRED${i})"
-		MODELING_JOBIDS+=("$JOBID1")
-            done
+# submit_feature_job: Submits a new SLURM job for generating a feature file.
+# Usage: submit_feature_job fasta_file_name
+submit_feature_job() {
+        local fasta_file=$1
+        local flag_file="${LOC_FLAGS}/${fasta_file}.flag"
+        # If flag exists, do not resubmit job
+        if [ -f "${flag_file}" ]; then
+                echo "Job already submitted for ${fasta_file}. Skipping."
+                CONTINUE="FALSE"
+                return 0
         fi
-    else
-        log_message "${RED}" "NOT SUBMITTING NEW JOBS FOR ${OUT_NAME} - CHANGE MODE TO ALLOW NEW SUBMISSIONS."
-    fi
+        cp -r "$LOC_FEA_GEN/feaGen_template" "$LOC_FEA_GEN/${fasta_file}"
+        cd "$LOC_FEA_GEN/${fasta_file}"
+        echo "FILE=${fasta_file}" > "$LOC_FEA_GEN/${fasta_file}/00_user_parameters.inc"
+        local JOBID1=$(sbatch --parsable script_msa.sh)
+        echo "FEATURE FILE MISSING... STARTING MSA FOR $fasta_file WITH JOB ID: ${JOBID1}"
+        # Create a flag file indicating that this feature is being processed
+        touch "${flag_file}"
+        CONTINUE="FALSE"
 }
 
+# Main function to evaluate prediction for a model
 evaluate_prediction_for_model() {
-    local loc_out=$1
-    local out_name=$2
-    local i=$3  # model index
-    local loc_scripts=$4
-    local file=$5
-    local mode=$6
-
-    # Assessing model files
-    cd "${loc_out}" 2>/dev/null
-    find . 2>/dev/null -name '*.pkl' -delete
-
-    local out_rlx_model_count=$(ls 2>/dev/null | grep -c "^relaxed_${out_name}_model_${i}_*")
-    local out_model_count=$(ls 2>/dev/null | grep -c "^${out_name}_model_${i}_*")
-    local model_count=$(ls 2>/dev/null | grep -c "^model_${i}_*")
-    local moved_out_model_count=0
-    [ -d "./MODELS" ] && moved_out_model_count=$(ls ./MODELS 2>/dev/null | grep -c "^${out_name}_model_${i}_*")
-
-    # Evaluate prediction status
-    case 1 in
-        $( [ "$out_rlx_model_count" -eq 1 ] || [ "$model_count" -eq 1 ] || \
-           [ "$out_model_count" -eq 1 ] || [ "$moved_out_model_count" -eq 1 ] && echo 1) )
-            PREDICTION_STATUS="PASS"
-            ;;
-        $( [ "$out_rlx_model_count" -gt 1 ] || [ "$model_count" -gt 1 ] || \
-           [ "$out_model_count" -gt 1 ] || [ "$moved_out_model_count" -gt 1 ] && echo 1) )
-            log_message "$YELLOW" "MODEL ${i} OF ${out_name} WAS PREDICTED MORE THAN ONCE. PLEASE CHECK FOLDER BEFORE JOINING SLURMS."
-            PREDICTION_STATUS="PASS"
-            ;;
-        $( [ "$moved_out_model_count" -eq 1 ] && echo 1) )
-            mv "${loc_out}/MODELS/${out_name}_model_${i}_*" "${loc_out}"
-            PREDICTION_STATUS="PASS"
-            ;;
-        *)
-            cd "${loc_scripts}/runs/${out_name}"
-            local TIME_LIMIT_EVAL=$(check_grep_status "DUE TO TIME LIMIT")
-            local X_NOT_IN_LIST_EVAL=$(check_grep_status "model_${i}.*x not in list")
-            local OOM_EVAL=$(check_grep_status "model_${i}.*Out of memory")
-
-            if [ "$TIME_LIMIT_EVAL" -eq 0 ]; then
-                log_message "$BLUE" "TIME LIMIT FAIL OF ${out_name}! WILL NOT START A NEW PREDICTION ROUND..."
-            elif [ "$X_NOT_IN_LIST_EVAL" -eq 0 ]; then
-                log_message "${BLUE}" "X NOT IN LIST FAIL OF ${out_name} MODEL ${i}! WILL NOT START A NEW PREDICTION ROUND..."
-            elif [ "$OOM_EVAL" -eq 0 ]; then
-                log_message "${BLUE}" "OUT OF MEMORY FAIL OF ${out_name} MODEL ${i}! WILL NOT START A NEW PREDICTION ROUND..."
-            else
-                if [ "$mode" -eq 1 ]; then
-                    local JOBID1=$(sbatch --parsable script_model_${i}.sh)
-                    log_message "${YELLOW}" "/(-.-)\\ ${JOBID1} (PRED ${i})"
-		    MODELING_JOBIDS+=("$JOBID1")
-                else
-                    printf "${RED}" "/(-.-)\\ ${GRAY}CANNOT START PRED ${i} OF ${RED}${out_name}${GRAY} - CHANGE MODE TO ALLOW NEW SUBMISSIONS... ${NC}\n"
+        local loc_out=$1
+        local out_name=$2
+        local i=$3  # model index
+        local loc_scripts=$4
+        local file=$5
+        local mode=$6
+        # Enter loc_out dir
+        cd ${loc_out} 2>/dev/null
+        # Remove pickle files
+        find . 2>/dev/null -name "*.pkl" -delete
+        # Count various types of model files
+        OUT_RLX_MODEL_COUNT=$(ls 2>/dev/null | grep -c ^relaxed_${out_name}_model_*)
+        OUT_MODEL_COUNT=$(ls 2>/dev/null | grep -c ^${out_name}_model_*)
+        MODEL_COUNT=$(ls 2>/dev/null | grep -c ^model_*)
+        MOVED_OUT_MODEL_COUNT=0
+        if [ -d "./MODELS" ]; then
+                MOVED_OUT_MODEL_COUNT=$(ls ./MODELS 2>/dev/null | grep -c "^${out_name}_model_")
+        fi
+        # Count occurrences of each individual model in each type of model files
+        for i in {1..5}; do
+                local total_count=0
+                total_count+=$(ls 2>/dev/null | grep -c "^relaxed_${out_name}_model_${i}_*")
+                total_count+=$(ls 2>/dev/null | grep -c "^${out_name}_model_${i}_*")
+                total_count+=$(ls 2>/dev/null | grep -c "^model_${i}_*")
+                if [ -d "./MODELS" ]; then
+                        total_count+=$(ls ./MODELS 2>/dev/null | grep -c "^${out_name}_model_${i}_*")
                 fi
-            fi
-            PREDICTION_STATUS="FAIL"
-            ;;
-    esac
+                MODEL_COUNTS[$i]=$total_count
+        done
+
+        local STATUS_MESSAGE=(
+        ["TIME_LIMIT"]="TIME LIMIT FAIL OF ${out_name}! WILL NOT START A NEW PREDICTION ROUND..."
+        ["X_NOT_IN_LIST"]="X NOT IN LIST FAIL OF ${out_name} MODEL ${i}! WILL NOT START A NEW PREDICTION ROUND..."
+        ["OUT_OF_MEMORY"]="OUT OF MEMORY FAIL OF ${out_name} MODEL ${i}! WILL NOT START A NEW PREDICTION ROUND..."
+        )
+
+        if [ "${MODEL_COUNTS[$i]}" -ge 1 ]; then
+                PREDICTION_STATUS="PASS"
+        else
+                cd "${loc_scripts}/runs/${out_name}" || exit 1
+                for STATUS in "${!STATUS_MESSAGE[@]}"; do
+                        check_grep_status "$STATUS"
+                        if [ $? -eq 0 ]; then
+                                echo "${STATUS_MESSAGE[$STATUS]}"
+                                PREDICTION_STATUS="FAIL"
+                                return
+                        fi
+                done
+                PREDICTION_STATUS="FAIL"
+        fi
 }
-# Usage
-#evaluate_prediction_for_model "$LOC_OUT" "$OUT_NAME" "$i" "$LOC_SCRIPTS" "$FILE" "$MODE"
+
+submit_jobs_based_on_mode() {
+        local mode=$1
+        local loc_fasta=$2
+        local loc_features=$3
+        local stoichiometry=$4
+        local loc_out=$5
+        local out_name=$6
+        local loc_scripts=$7
+        local file=$8
+
+        # Initialize an associative array to hold the counts for each individual model
+        declare -A MODEL_COUNTS
+
+        local length=$(calculate_setup_aa_length "$loc_fasta" "$loc_features" "$stoichiometry")
+        # Check which models are missing and create an array
+        local missing_models=()
+        # In submit_jobs_based_on_mode
+        for i in {1..5}; do
+                evaluate_prediction_for_model "$loc_out" "$out_name" "$i" "$loc_scripts" "$file" "$mode"
+                if [ "$PREDICTION_STATUS" != "PASS" ]; then
+                        missing_models+=("$i")
+                fi
+        done
+        ALL_MODELS_PRESENT=true
+        for i in {1..5}; do
+                if [[ ${MODEL_COUNTS[$i]} -lt 1 ]]; then
+                        ALL_MODELS_PRESENT=false
+			printf "${RED}Model_${i} is missing.${NC}\n"
+                else
+			printf "${CYAN}Model count for model_${i}: ${MODEL_COUNTS[$i]}${NC}\n"
+                fi
+        done
+        if [ "$mode" -eq 1 ]; then
+                # Create a string representing the missing models for sbatch
+                local missing_models_str=$(IFS=,; echo "${missing_models[*]}")
+                # Check if all models are missing
+                if [ ${#missing_models[@]} -eq 5 ]; then
+                        if [ "$length" -lt 2000 ]; then
+                                local JOBID1=$(sbatch --parsable script_model_all.sh)
+                                echo "Starting ${JOBID1} (PRED 1-5)"
+                                PREDICTION_STATUS="FAIL"
+                        else
+                                local JOBID1=$(sbatch --array=1-5 --parsable script_model_X.sh)
+                                echo "Starting ${JOBID1} (PRED 1-5 individually)"
+                        fi
+                elif [ -n "$missing_models_str" ]; then
+                        # Submit a job array only for the missing models
+                        local JOBID1=$(sbatch --array="$missing_models_str" --parsable script_model_X.sh)
+                        echo "Starting ${JOBID1} (PRED $missing_models_str)"
+                fi
+	else
+                echo "NOT SUBMITTING NEW JOBS FOR ${OUT_NAME} - CHANGE MODE TO ALLOW NEW SUBMISSIONS."
+        fi
+}
+
 
 process_prediction() {
-    local loc_out=$1
-    local loc_scripts=$2
-    local out_name=$3
-    local out_dir=$4
-    local storage=$5
+        local loc_out=$1
+        local loc_scripts=$2
+        local out_name=$3
+        local out_dir=$4
+        local storage=$5
 
-	mkdir -p "${loc_out}/JSON" "${loc_out}/MODELS"
-	cd "${loc_scripts}/runs/"
-	mv "${out_name}" "${loc_out}/RUN_DETAILS"
-	cd "$loc_out"
-	# Move all .pdb files to MODELS folder and prepend with ${out_name}
-	for pdb_file in *.pdb; do
-		if [[ -f "$pdb_file" ]]; then
-			mv "$pdb_file" "${loc_out}/MODELS/${out_name}_${pdb_file}"
-		fi
-	done
-	# Move all .json files to JSON folder and prepend with ${out_name}
-	for json_file in *.json; do
-		if [[ -f "$json_file" ]]; then
-			mv "$json_file" "${loc_out}/JSON/${out_name}_${json_file}"
-		fi
-	done
-	Rscript --vanilla "${loc_out}/RUN_DETAILS"/extract2csv.R "${loc_out}" "${out_name}"
-	#local new_name_date=$(add_date "$loc_out")
-	#cp -r "${out_dir}/${new_name_date}" "$storage"
-	#local loc_out_date_rep=$(add_rep "${storage}/${new_name_date}")
+        mkdir -p "${loc_out}/JSON" "${loc_out}/MODELS"
+        cd "${loc_scripts}/runs/"
+        mv "${out_name}" "${loc_out}/RUN_DETAILS"
+        cd "$loc_out"
+        # Move all .pdb files to MODELS folder and prepend with ${out_name}
+        for pdb_file in *.pdb; do
+                if [[ -f "$pdb_file" ]]; then
+                        mv "$pdb_file" "${loc_out}/MODELS/${out_name}_${pdb_file}"
+                fi
+        done
+        # Move all .json files to JSON folder and prepend with ${out_name}
+        for json_file in *.json; do
+                if [[ -f "$json_file" ]]; then
+                        mv "$json_file" "${loc_out}/JSON/${out_name}_${json_file}"
+                fi
+        done
+        Rscript --vanilla "${loc_out}/RUN_DETAILS"/extract2csv.R "${loc_out}" "${out_name}"
 }
-# Example usage:
-# process_prediction "$PREDICTION_TICKER" "$LOC_OUT" "$LOC_SCRIPTS" "$OUT_NAME" "$OUT_DIR" "$STORAGE"
+
+add_rep() {
+    # Argument: Full path to the specific directory
+    local DIR_PATH="$1"
+    local BASENAME=$(basename "$DIR_PATH")
+    local PARENT_DIR=$(dirname "$DIR_PATH")
+
+    # Collect matching directories
+    local matching_dirs=()
+    for dir in "$PARENT_DIR"/*; do
+        if [[ "$(basename "$dir")" == "$BASENAME"* ]]; then
+            matching_dirs+=("$dir")
+        fi
+    done
+
+    # Sort directories by creation date
+    IFS=$'\n' sorted_dirs=($(ls -dt "${matching_dirs[@]}"))
+    unset IFS
+
+    # Rename directories
+    local count=1
+    local NEW_NAME=""
+    for dir in "${sorted_dirs[@]}"; do
+        NEW_NAME="${BASENAME}_rep$count"
+        mv "$dir" "$PARENT_DIR/$NEW_NAME"
+        echo "Renamed $dir to $PARENT_DIR/$NEW_NAME"
+        count=$((count + 1))
+    done
+
+    # Echo the new name of the specific directory
+    echo "$NEW_NAME"
+}
