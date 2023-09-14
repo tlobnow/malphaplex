@@ -1,13 +1,14 @@
 #!/usr/bin/env Rscript
 args = commandArgs(trailingOnly=TRUE)
-
-# Navigate one directory up from RUN_DETAILS
-parent_dir <- dirname(getwd())
-# Extract main path and folder name
-OUT_NAME <- basename(parent_dir)
-
-#cat("parent_dir: ", parent_dir, "\n")
-#cat("OUT_NAME: ", OUT_NAME, "\n")
+if (length(args) >= 2) {
+    LOC_OUT    <- args[1]
+    OUT_NAME   <- args[2]
+} else {
+    LOC_OUT    <- dirname(getwd())
+    OUT_NAME   <- basename(LOC_OUT)
+}
+cat("LOC_OUT: ", LOC_OUT, "\n")
+cat("OUT_NAME: ", OUT_NAME, "\n")
 
 OVERWRITE_CSV = FALSE
 unlink(".RData")
@@ -23,6 +24,7 @@ jsonExtract <- function(jsonFile, outFile, fileName) {
 
 	# Extract relevant information using pivot_longer function
 	model <- strsplit(jsonData$order[[1]], "_", fixed = TRUE)[[1]][2]
+	#model <- jsonData$order %>% as.data.frame() %>% rename(RECYCLE = 1) %>% mutate(MODEL = as.numeric(str_extract(RECYCLE, "(?<=model_)[0-5]")))
 	tolData <- jsonData$tol_values %>% as.data.frame() %>% pivot_longer(everything(), names_to = "RECYCLE", values_to = "TOL") 
 	pLDDTData <- jsonData$plddts %>% as.data.frame() %>% pivot_longer(everything(), names_to = "RECYCLE", values_to = "pLDDT") 
 	pTMData <- jsonData$ptms %>% as.data.frame() %>% pivot_longer(everything(), names_to = "RECYCLE", values_to = "pTM") 
@@ -54,7 +56,7 @@ files <- OUT_NAME
 # Iterate over each file
 for (fileName in files) {
 	# Get the complete path of the output folder
-	folder <- parent_dir
+	folder <- LOC_OUT
 
 	dir_create(folder,"CSV")
 
@@ -123,7 +125,6 @@ for (fileName in files) {
 						  NUM_CLUSTERS = V12,
 						  N_MONOMERS = V13
 			)
-
 			# Add ranking based on descending iScore within each file
 			jsonExtractData <- jsonExtractData %>%
 				dplyr::mutate(

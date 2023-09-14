@@ -84,10 +84,19 @@ srun $PYTHON_PATH/python3 -u $AF_DIR/run_af2c_mod.py \
   --data_dir=$DATA_DIR \
   --output_dir=$OUT_DIR \
   --feature_dir=$FEA_DIR \
-  --model_names=$NEURAL_NETWORK_MODELS \
+  --model_names=model_1_multimer_v3,model_2_multimer_v3,model_3_multimer_v3,model_4_multimer_v3,model_5_multimer_v3 \
   --preset=$PRESET \
-  --model_preset=$MODEL_PRESET \
+  --model_preset=multimer_np\
   --save_recycled=$RECYCLING_SETTING \
-  --msa_pairing=$MSA_PAIRING \
-#  --checkpoint_tag=$CHECKPOINT_TAG
+  --msa_pairing=$MSA_PAIRING &
 
+srun $PYTHON_PATH/python3 -u $AF_DIR/run_af2c_mod.py \
+  --target_lst_path=$TARGET_LST_FILE \
+  --data_dir=$DATA_DIR \
+  --output_dir=$OUT_DIR \
+  --feature_dir=$FEA_DIR \
+  --model_names=model_1_ptm,model_2_ptm,model_3_ptm,model_4_ptm,model_5_ptm \
+  --preset=$PRESET \
+  --model_preset=monomer_ptm\
+  --save_recycled=$RECYCLING_SETTING \
+  --msa_pairing=$MSA_PAIRING

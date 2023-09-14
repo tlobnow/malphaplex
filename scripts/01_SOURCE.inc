@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Load necessary paths
-source /u/${USER}/malphaplex/scripts/02_PATHS.inc
+source /u/${USER}/malphaplex/scripts/PATHS
 
 # Remove the file if it already exists from previous runs
 [   -f $INFO_LIST ] && rm $INFO_LIST
@@ -21,7 +21,8 @@ case "$RUN_MODE" in
 
     MULTI)
         # Configuration for MULTI mode
-        A=MYD88_MOUSE                       # File to model against all files in the folder
+        #A=MYD88_MOUSE                       # File to model against all files in the folder
+	A=IRAK4_MOUSE
         N_A=1
         N_B=1
 

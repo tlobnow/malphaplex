@@ -9,39 +9,18 @@
 module load parallel
 
 # Load the path and setting variables
-source "./01_SOURCE.inc"
-source "./02_PATHS.inc"
-source "./03_FUNCTIONS"
+source "/u/$USER/malphaplex/scripts/PATHS"
+source "${LOC_SCRIPTS}/01_SOURCE.inc"
 
 DEFAULT_COLOR='\033[1;37m'  # Default to white color
 
 # Print a waiting message
-log_message ${BLUE} "      . . .    Please                     		"
-log_message ${BLUE} "       :.:     Wait!              :.    		"
-log_message ${BLUE} "    ____:____     _  _            :.: 	    	"
-log_message ${BLUE} "   |         \\   | \\/ | 	     ___:___    	"
-log_message ${BLUE} "   |          \\   \\  |  	    |       \\   .	"
-log_message ${BLUE} "   |  O        \\__/ |   	    |  O     \\ /\\ 	"
-log_message ${BLUE} " ~^~^~^~^~^~^~^~^~^~^~^~^~~^~^~^~^~^~^~^~^~^~^~^~^~"
+echo "      . . .    Please                     	 "
+echo "       :.:     Wait!                  		 "
+echo "    ____:____     _  _             	    	 "
+echo "   |         \\   | \\/ |		 _______    	 "
+echo "   |          \\   \\  |		|       \\  	 "
+echo "   |  O        \\__/ |		|  O     \\ /\\  "
+echo " ~^~^~^~^~^~^~^~^~^~^~^~^~~^~^~^~^~^~^~^~^~^~^~^~^~"
 
-declare -a MSA_JOBIDS
-declare -a MODELING_JOBIDS
-
-MSA_JOBIDS=()
-MODELING_JOBIDS=()
-
-# Main execution
-case "$RUN_MODE" in
-    "SINGLE")
-        run_single_mode
-        ;;
-    "MULTI")
-        run_multi_mode
-        ;;
-    "MATRIX")
-        run_matrix_mode
-        ;;
-    *)
-        log_message "Please adjust the run settings in 01_SOURCE.inc"
-        ;;
-esac
+tail -n +2 "$INFO_LIST" | parallel --colsep '\t' "source ${LOC_SCRIPTS}/COORDINATOR.sh {1} {2}"

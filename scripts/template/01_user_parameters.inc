@@ -1,7 +1,7 @@
 ## Set user parameters for alphafold, common to MSA and prediction jobs
 
-source ../../02_PATHS.inc
-source ../../01_SOURCE.inc
+source ../../PATHS
+#source ../../01_SOURCE.inc
 source ./00_user_parameters.inc
 
 #if [ "$RUN" = "MATRIX" ]; then source ./target.lst; fi
@@ -21,16 +21,17 @@ PRESET=super2           #2 ensembles, up to 512 MSA clusters, recycling up to 20
 
 ## RECYCLING SETTINGS #####################################################
 #RECYCLING_SETTING=0     #turn off intermediate recycle output (by setting save_recycled=0) to save memory cost
-RECYCLING_SETTING=1     #no recycle info saving
+#RECYCLING_SETTING=1     #no recycle info saving
 #RECYCLING_SETTING=2    #print metrics of intermediate recycles
 RECYCLING_SETTING=3    #additionally saving pdb structures of all recycles,
 #RECYCLING_SETTING=4    #additionally save all results in pickle
 
 ## NEURAL NETWORK MODEL(s) ################################################
-NEURAL_NETWORK_MODELS=model_1_multimer_v3,model_2_multimer_v3,model_3_multimer_v3,model_4_multimer_v3,model_5_multimer_v3 # Using AF2 multimer v2.3.0
+#NEURAL_NETWORK_MODELS=model_1_multimer_v3,model_2_multimer_v3,model_3_multimer_v3,model_4_multimer_v3,model_5_multimer_v3 # Using AF2 multimer v2.3.0
 #NEURAL_NETWORK_MODELS=model_1_multimer_v2,model_2_multimer_v2,model_3_multimer_v2,model_4_multimer_v2,model_5_multimer_v2 # Using AF2 multimer v2.2.0
 #NEURAL_NETWORK_MODELS=model_1_multimer,model_2_multimer,rmodel_3_multimer,model_4_multimer,model_5_multimer # Using AF2 multimer v2.1.1
 #NEURAL_NETWORK_MODELS=model_1_ptm,model_2_ptm,model_3_ptm,model_4_ptm,model_5_ptm # Using AF2 monomer_ptm v2.0.1
+NEURAL_NETWORK_MODELS=model_1_multimer_v3,model_2_multimer_v3,model_3_multimer_v3,model_4_multimer_v3,model_5_multimer_v3,model_1_ptm,model_2_ptm,model_3_ptm,model_4_ptm,model_5_ptm
 
 ## MODEL PRESET ###########################################################
 ### Choose model_preset from: ['monomer_ptm', 'multimer', 'multimer_np']

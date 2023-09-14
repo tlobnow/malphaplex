@@ -31,8 +31,8 @@ esac
 module purge
 module load jdk/8.265 gcc/10 impi/2021.2 fftw-mpi R/4.0.2
 
-source "./02_PATHS.inc"
-source "./03_FUNCTIONS"
+source "./PATHS"
+source "./FUNCTIONS"
 
 OUT_NAME="$1"
 STOICHIOMETRY="$2"
