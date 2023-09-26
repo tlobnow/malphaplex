@@ -235,16 +235,14 @@ evaluate_prediction_for_model() {
                 MOVED_OUT_MODEL_COUNT=$(ls ./MODELS 2>/dev/null | grep -c "^${out_name}_model_")
         fi
         # Count occurrences of each individual model in each type of model files
-        for i in {1..5}; do
-                local total_count=0
-                total_count+=$(ls 2>/dev/null | grep -c "^relaxed_${out_name}_model_${i}_*")
-                total_count+=$(ls 2>/dev/null | grep -c "^${out_name}_model_${i}_*")
-                total_count+=$(ls 2>/dev/null | grep -c "^model_${i}_*")
-                if [ -d "./MODELS" ]; then
-                        total_count+=$(ls ./MODELS 2>/dev/null | grep -c "^${out_name}_model_${i}_*")
-                fi
-                MODEL_COUNTS[$i]=$total_count
-        done
+	local total_count=0
+        total_count+=$(ls 2>/dev/null | grep -c "^relaxed_${out_name}_model_${i}_*")
+        total_count+=$(ls 2>/dev/null | grep -c "^${out_name}_model_${i}_*")
+        total_count+=$(ls 2>/dev/null | grep -c "^model_${i}_*")
+        if [ -d "./MODELS" ]; then
+                total_count+=$(ls ./MODELS 2>/dev/null | grep -c "^${out_name}_model_${i}_*")
+        fi
+        MODEL_COUNTS[$i]=$total_count
 
         local STATUS_MESSAGE=(
         ["TIME_LIMIT"]="TIME LIMIT FAIL OF ${out_name}! WILL NOT START A NEW PREDICTION ROUND..."
@@ -298,6 +296,12 @@ submit_jobs_based_on_mode() {
 			printf "${CYAN}Model count for model_${i}: ${MODEL_COUNTS[$i]}${NC}\n"
 		fi
 	done
+
+	#If all models (1-5) are missing, you will either:
+	#Submit all models together if the length is less than 1600.
+	#Or flag the setup as too large if the length is greater than or equal to 1600.
+	#If some (but not all) models are missing, you will submit only the missing models using script_model_X.sh.
+	#If you are not in mode 1, you will print a message indicating new job submissions are not allowed for the current setup.
 	if [ "$mode" -eq 1 ]; then
 		local flag_file="${LOC_FLAGS}/${OUT_NAME}.flag_too_large"
 		# Check for the existence of the flag file
@@ -318,7 +322,7 @@ submit_jobs_based_on_mode() {
 				touch "${flag_file}"
 				echo "Setup > 1600 amino acids. Will not start predictions."
 			fi
-		elif [ -n "$missing_models_str" ]; then
+		elif [ ${#missing_models[@]} -gt 0 ]; then
 			for i in 1 2; do  # Loop to submit the job twice
 				local JOBID1=$(sbatch --array="$missing_models_str" --parsable script_model_X.sh)
 				echo "Starting ${JOBID1} (PRED $missing_models_str) Run $i"
