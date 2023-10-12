@@ -12,11 +12,11 @@
 
 2. Create a new environment:
 
-        conda create --name malpha python=3.8
+        `conda create --name malpha python=3.8`
 
 3. Activate the environment:
 
-	conda activate malpha
+	`conda activate malpha`
 
 4. Clone required Github repositories and run the `setup.sh` script:
 
@@ -28,19 +28,19 @@
 
 5. Load an R Module (latest version on the Cluster), e.g.:
 
-	module load R/4.3
+	`module load R/4.3`
 
 6. Start R, install the `pacman` R package and once the R interface is loaded, paste and run the install command:
 
-	R
-	install.package("pacman")
+	`R`
+	`install.package("pacman")`
 
 7. Type `yes` and when asked for a specific mirror, enter `1`:
 
 
 8. Once the package is installed, type quit() and there is no need to save the work space:
 
-	quit()
+	`quit()`
 
 
 ### FOR EVERY NORMAL SESSION
