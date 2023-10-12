@@ -49,39 +49,34 @@
 
 ## FOR EVERY NORMAL SESSION
 
-1. **Activate the Environment and Update Scripts**
-    ```bash
-    cd malphaplex
-    ```
-   
-2. **Enter the `fasta_files` Folder**
+1. **Enter the `fasta_files` Folder**
     - Add new fasta files or folders.
     - Only fasta files in the main folder will be prepared.
     - Copy all fasta files into the main `fasta_files` directory for preparation.
 
-3. **Choose a Run Option**
+2. **Choose a Run Option**
     - Open `PATHS` file to specify the "RUN MODE":
         - For a single setup with variable stoichiometry and output name, set `RUN=SINGLE`.
         - For multiple samples following a set stoichiometry, set `RUN=MULTI` and specify the `FOLDER` name (folder with protein fasta files of interest).
         - For checking stoichiometric relationships between two proteins, set `RUN=MATRIX`.
 
-4. **Adjust Settings**
+3. **Adjust Settings**
     - Open `01_SOURCE.inc` and set the stoichiometry and output name structures.
     - Open `COORDINATOR.sh` and ensure that the `MODE` is set to `1` (allows to submit new jobs).
 
-5. **Start Runs and Submit Jobs**
+4. **Start Runs and Submit Jobs**
     ```bash
     ./main.sh
     ```
-   
-6. **Monitor Jobs**
+
+5. **Monitor Jobs**
     - While the slurm jobs are running, check progress of running jobs as described in step 4.
     - Check finished or outstanding jobs per run folder: change `MODE` in `COORDINATOR.sh` to `MODE=2` to get a progress report, then change back to `MODE=1` to submit new jobs.
 
-7. **Post-Processing**
+6. **Post-Processing**
     - Once the model predictions have finished, restart `main.sh` to confirm that all jobs finished successfully.
     - This will also process the JSON files, generate a CSV file, and copy your files from `/ptmp/$USER` to your `$STORAGE` destination (adjust in `PATHS`).
 
-8. **Repeat Runs (Optional)**
+7. **Repeat Runs (Optional)**
     - If you wish to repeat the runs, change to `RESTART="TRUE"` in `COORDINATOR.sh`.
     - This will permanently move your output folder to `$STORAGE` and allow new submissions with the same setup.
