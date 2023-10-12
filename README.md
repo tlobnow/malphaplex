@@ -33,14 +33,20 @@
 6. Start R, install the `pacman` R package:
 
 	R
-	# once the R interface is loaded, paste and run:
+
+once the R interface is loaded, paste and run:
+
 	install.package("pacman")
-	# type yes, when asked for a specific mirror, enter `1`
+
+type yes, when asked for a specific mirror, enter `1`
+
 
 7. Once the package is installed, type quit():
 
 	quit()
-	# and there is no need to save the work space:
+
+and there is no need to save the work space:
+
 	n
 
 
