@@ -30,24 +30,16 @@
 
 	module load R/4.3
 
-6. Start R, install the `pacman` R package:
+6. Start R, install the `pacman` R package and once the R interface is loaded, paste and run the install command:
 
 	R
-
-once the R interface is loaded, paste and run:
-
 	install.package("pacman")
 
-type yes, when asked for a specific mirror, enter `1`
+7. Type `yes` and when asked for a specific mirror, enter `1`
 
-
-7. Once the package is installed, type quit():
+8. Once the package is installed, type quit() and there is no need to save the work space:
 
 	quit()
-
-and there is no need to save the work space:
-
-	n
 
 
 ### FOR EVERY NORMAL SESSION
