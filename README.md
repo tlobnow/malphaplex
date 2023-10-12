@@ -35,7 +35,8 @@
 	R
 	install.package("pacman")
 
-7. Type `yes` and when asked for a specific mirror, enter `1`
+7. Type `yes` and when asked for a specific mirror, enter `1`:
+
 
 8. Once the package is installed, type quit() and there is no need to save the work space:
 
