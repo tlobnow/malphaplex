@@ -10,17 +10,38 @@
         ./Miniconda3-latest-Linux-x86_64.sh
 
 
-3. Create a new environment:
+2. Create a new environment:
 
         conda create --name malpha python=3.8
 
-5. Clone required Github repositories and run the `setup.sh` script:
+3. Activate the environment:
+
+	conda activate malpha
+
+4. Clone required Github repositories and run the `setup.sh` script:
 
         cd
         git clone https://github.com/FreshAirTonight/af2complex.git
         git clone https://github.com/tlobnow/malphaplex.git
         cd malphaplex
         ./setup.sh
+
+5. Load an R Module (latest version on the Cluster), e.g.:
+
+	module load R/4.3
+
+6. Start R, install the `pacman` R package:
+
+	R
+	# once the R interface is loaded, paste and run:
+	install.package("pacman")
+	# type yes, when asked for a specific mirror, enter `1`
+
+7. Once the package is installed, type quit():
+
+	quit()
+	# and there is no need to save the work space:
+	n
 
 
 ### FOR EVERY NORMAL SESSION
@@ -36,7 +57,7 @@
 
 
 3. Choose one of the following run options:
-    - Open `02_PATHS.inc` file to specify the RUN MODE":
+    - Open `PATHS` file to specify the RUN MODE":
         - For a single setup with variable stoichiometry and output name:
         - Set `RUN=SINGLE`.
     - For multiple samples following a set stoichiometry:
@@ -62,7 +83,7 @@
 8. Once the model predictions have finished:
     - Restart `main.sh` to confirm that all jobs finished successfully
     - This will also process the JSON files and generate a CSV file
-    - Additionally, your files will be copied from `/ptmp/$USER` to your `$STORAGE` destination (adjust in `02_PATHS.inc`.
+    - Additionally, your files will be copied from `/ptmp/$USER` to your `$STORAGE` destination (adjust in `PATHS`.
 
 9. If you wish to repeat the runs, change to `RESTART="TRUE"` in `COORDINATOR.sh`
     - This will permanently move your output folder to $STORAGE and allow new submissions with the same setup.
