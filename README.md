@@ -51,8 +51,6 @@
 
 1. **Enter the `fasta_files` Folder**
     - Add new fasta files or folders.
-    - Only fasta files in the main folder will be prepared.
-    - Copy all fasta files into the main `fasta_files` directory for preparation.
 
 2. **Choose a Run Option**
     - Open `PATHS` file to specify the "RUN MODE":
