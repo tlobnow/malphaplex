@@ -37,7 +37,7 @@
     - Start R, install the `pacman` R package:
       ```bash
       R
-      install.package("pacman")
+      install.packages("pacman")
       ```
       
     - Type `yes` and when asked for a specific mirror, enter `1`.
